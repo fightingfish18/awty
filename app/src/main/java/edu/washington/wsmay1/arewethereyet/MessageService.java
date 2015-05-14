@@ -26,8 +26,15 @@ public class MessageService extends Service {
             messageTime.cancel();
         } else {
             messageTime = new Timer();
-            messageTime.scheduleAtFixedRate(new MessageDisplayTask(), 0, INTERVAL);
+            messageTime.scheduleAtFixedRate(new MessageDisplayTask(), 0, INTERVAL * 60000);
         }
+    }
+
+    @Override
+    public void onDestroy(){
+        Toast.makeText(this, "Sending Cancelled", Toast.LENGTH_SHORT).show();
+        super.onDestroy();
+        messageTime.cancel();
     }
 
     class MessageDisplayTask extends TimerTask {

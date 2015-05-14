@@ -13,6 +13,7 @@ public class MainActivity extends ActionBarActivity {
     private static int interval = 0;
     private static String messageText;
     private static String phoneNumber;
+    private boolean started = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,14 +23,17 @@ public class MainActivity extends ActionBarActivity {
         final EditText message = (EditText) findViewById(R.id.messagePrompt);
         final EditText phoneNumber = (EditText) findViewById(R.id.numberInput);
         final EditText frequency = (EditText) findViewById(R.id.frequencyInput);
+        final Intent messageServiceIntent = new Intent(this, MessageService.class);
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Button b = (Button)v;
-                if (interval == 0) {
-                    handleButtonStart(message, phoneNumber, frequency, b);
+                Button b = (Button) v;
+                if (!started) {
+                    handleButtonStart(message, phoneNumber, frequency, b, messageServiceIntent);
+                    started = true;
                 } else {
-                    handleButtonStop(b);
+                    handleButtonStop(b, messageServiceIntent);
+                    started = false;
                 }
             }
         });
@@ -59,25 +63,26 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void handleButtonStart(EditText message, EditText phoneNum, EditText frequency, Button v) {
+    public void handleButtonStart(EditText message, EditText phoneNum, EditText frequency, Button v, Intent i) {
         if (message.getText().toString().length() > 0 && phoneNum.getText().toString().length() == 10 && frequency.getText().toString().length() > 0) {
-            v.setText("Stop");
-            interval = Integer.parseInt(frequency.getText().toString());
-            messageText = message.getText().toString();
-            phoneNumber = phoneNum.getText().toString();
-            Intent beginService = new Intent(this, MessageService.class);
-            startService(beginService);
+            if (Integer.parseInt(frequency.getText().toString()) > 0 && phoneNum.getText().toString().matches("[0-9]+")) {
+                v.setText("Stop");
+                interval = Integer.parseInt(frequency.getText().toString());
+                messageText = message.getText().toString();
+                phoneNumber = phoneNum.getText().toString();
+                startService(i);
+            } else {
+                Toast.makeText(getApplicationContext(), "Please enter a number greater than 0 for your frequency, and make sure the phone number contains only numbers", Toast.LENGTH_SHORT).show();
+            }
         } else {
-            Toast.makeText(getApplicationContext(), message.getText().toString(), Toast.LENGTH_SHORT).show();
-            Toast.makeText(getApplicationContext(), phoneNum.getText().toString(), Toast.LENGTH_SHORT).show();
-            Toast.makeText(getApplicationContext(), frequency.getText().toString(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Please check your input, all fields required, and the phone number should be 10 digits.", Toast.LENGTH_SHORT).show();
         }
     }
 
-    public void handleButtonStop(Button b) {
+    public void handleButtonStop(Button b, Intent i) {
         b.setText("Start");
-        Intent endService = new Intent(this, MessageService.class);
-        startService(endService);
+        stopService(i);
+        interval = 0;
     }
 
     public static int getInterval() {
